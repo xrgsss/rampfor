@@ -1,0 +1,7 @@
+{
+  "name": "Rampfor Music Player",
+  "description": "A sleek, dark-themed music player inspired by Rampfor, featuring AI-powered song search and discovery.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
