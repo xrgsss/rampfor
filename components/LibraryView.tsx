@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Heart, Clock, ListMusic, Plus, Play } from 'lucide-react';
-import { Song } from '../types';
+import { Song, Playlist } from '../types';
 import SongCard from './SongCard';
 
 interface LibraryViewProps {
@@ -14,13 +14,8 @@ interface LibraryViewProps {
   userId?: string;
   onEdit?: (song: Song) => void;
   onDelete?: (id: string) => void;
+  playlists: Playlist[];
 }
-
-const MOCK_PLAYLISTS = [
-  { id: 'p1', name: 'Discover Weekly', description: 'Your weekly mixtape of fresh music.', color: 'from-blue-600' },
-  { id: 'p2', name: 'Daily Mix 1', description: 'Duckhead and more.', color: 'from-green-600' },
-  { id: 'p3', name: 'Release Radar', description: 'Catch up on the latest music.', color: 'from-purple-600' },
-];
 
 const LibraryView: React.FC<LibraryViewProps> = ({ 
   likedSongs, 
@@ -31,7 +26,8 @@ const LibraryView: React.FC<LibraryViewProps> = ({
   currentSongId,
   userId,
   onEdit,
-  onDelete
+  onDelete,
+  playlists
 }) => {
   return (
     <div className="flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -127,27 +123,46 @@ const LibraryView: React.FC<LibraryViewProps> = ({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
-          {MOCK_PLAYLISTS.map(playlist => (
-            <div 
-              key={playlist.id}
-              className="group bg-[#121212] border border-[#1a1a1a] p-4 rounded-2xl hover:bg-[#1a1a1a] transition-all cursor-pointer relative overflow-hidden"
-            >
-              <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${playlist.color} to-transparent opacity-10 blur-2xl group-hover:opacity-20 transition-opacity`}></div>
-              <div className="flex flex-col h-full relative z-10">
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${playlist.color} to-black/20 flex items-center justify-center mb-4 text-white shadow-xl`}>
-                  <ListMusic size={24} />
+        {playlists.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
+            {playlists.map(playlist => {
+              const coverImage = playlist.coverUrl === 'default-vinyl'
+                ? 'https://picsum.photos/seed/playlist/400/400'
+                : playlist.coverUrl;
+              return (
+                <div 
+                  key={playlist.id}
+                  className="group bg-[#121212] border border-[#1a1a1a] p-4 rounded-2xl hover:bg-[#1a1a1a] transition-all cursor-pointer relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 overflow-hidden">
+                    <img src={coverImage} alt={playlist.name} className="w-full h-full object-cover opacity-10 group-hover:opacity-20 transition-opacity" />
+                  </div>
+                  <div className="flex flex-col h-full relative z-10">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500 shadow-xl">
+                        <ListMusic size={20} />
+                      </div>
+                      <span className="text-xs text-gray-400">{playlist.trackCount} lagu</span>
+                    </div>
+                    <h3 className="font-bold text-lg mb-1 group-hover:text-green-500 transition-colors">{playlist.name}</h3>
+                    <p className="text-gray-500 text-xs line-clamp-2">{playlist.description || 'Playlist kosong'}</p>
+                  </div>
                 </div>
-                <h3 className="font-bold text-lg mb-1 group-hover:text-green-500 transition-colors">{playlist.name}</h3>
-                <p className="text-gray-500 text-xs line-clamp-2">{playlist.description}</p>
-              </div>
-            </div>
-          ))}
-          <button className="border-2 border-dashed border-[#222] rounded-2xl p-4 flex flex-col items-center justify-center gap-3 text-gray-500 hover:border-green-500/50 hover:text-green-500 transition-all min-h-[160px]">
-            <Plus size={32} />
-            <span className="font-bold text-sm">Create Playlist</span>
-          </button>
-        </div>
+              );
+            })}
+            <button className="border-2 border-dashed border-[#222] rounded-2xl p-4 flex flex-col items-center justify-center gap-3 text-gray-500 hover:border-green-500/50 hover:text-green-500 transition-all min-h-[160px]">
+              <Plus size={32} />
+              <span className="font-bold text-sm">Create Playlist</span>
+            </button>
+          </div>
+        ) : (
+          <div className="bg-[#121212] border border-[#222] rounded-2xl p-8 text-center">
+            <p className="text-gray-500 mb-4 font-medium">Belum ada playlist. Buat satu untuk menyimpan lagu favoritmu.</p>
+            <button className="px-6 py-2 bg-white text-black rounded-full font-bold text-sm hover:scale-105 transition-transform active:scale-95">
+              Create Playlist
+            </button>
+          </div>
+        )}
       </section>
     </div>
   );

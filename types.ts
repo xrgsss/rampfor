@@ -11,6 +11,17 @@ export interface Song {
   userId?: string;
 }
 
+export interface Playlist {
+  id: string;
+  name: string;
+  description?: string | null;
+  coverUrl: string;
+  userId: string;
+  createdAt: string;
+  updatedAt?: string | null;
+  trackCount: number;
+}
+
 export interface PlayerState {
   currentSong: Song | null;
   isPlaying: boolean;

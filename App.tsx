@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
 import PlayerBar from './components/PlayerBar';
@@ -12,9 +12,14 @@ import UploadModal from './components/UploadModal';
 import EditSongModal from './components/EditSongModal';
 import SongDetailView from './components/SongDetailView';
 import AuthView from './components/AuthView';
-import { Song, ViewType } from './types';
+import { Song, ViewType, Playlist } from './types';
 import { searchAIsongs } from './services/geminiService';
 import { supabase } from './services/supabase';
+
+interface RecentlyPlayedEntry {
+  songId: string;
+  playedAt: string;
+}
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
@@ -29,7 +34,9 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [aiSuggestions, setAiSuggestions] = useState<{keywords: string[], recommendation: string} | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [recentlyPlayed, setRecentlyPlayed] = useState<Song[]>([]);
+  const [likedSongIds, setLikedSongIds] = useState<string[]>([]);
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [recentlyPlayedEntries, setRecentlyPlayedEntries] = useState<RecentlyPlayedEntry[]>([]);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   
@@ -37,6 +44,12 @@ const App: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const recentlyPlayedSongs = useMemo(() => {
+    const songMap = new Map(songs.map(song => [song.id, song]));
+    return recentlyPlayedEntries
+      .map(entry => songMap.get(entry.songId))
+      .filter((song): song is Song => Boolean(song));
+  }, [recentlyPlayedEntries, songs]);
 
   // Sync Supabase Auth
   useEffect(() => {
@@ -94,18 +107,155 @@ const App: React.FC = () => {
     }
   }, [volume]);
 
-  const toggleLike = (songId: string) => {
-    if (!session) {
+  useEffect(() => {
+    setSongs(prevSongs => prevSongs.map(song => ({
+      ...song,
+      isLiked: likedSongIds.includes(song.id),
+    })));
+  }, [likedSongIds]);
+
+  useEffect(() => {
+    if (!session?.user?.id) {
+      setLikedSongIds([]);
+      setPlaylists([]);
+      setRecentlyPlayedEntries([]);
+      return;
+    }
+
+    let isMounted = true;
+    const userId = session.user.id;
+
+    const fetchUserData = async () => {
+      try {
+        const { data: likes } = await supabase
+          .from('song_likes')
+          .select('song_id')
+          .eq('user_id', userId);
+        if (!isMounted) return;
+        setLikedSongIds(likes?.map(entry => entry.song_id) ?? []);
+      } catch (error) {
+        console.error('Gagal memuat liked songs:', error);
+      }
+
+      try {
+        const { data: playlistData } = await supabase
+          .from('playlists')
+          .select('id, name, description, cover_url, created_at, updated_at')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+
+        const playlistIds = playlistData?.map(item => item.id) ?? [];
+        let trackCounts: Record<string, number> = {};
+
+        if (playlistIds.length > 0) {
+          const { data: playlistTracks } = await supabase
+            .from('playlist_tracks')
+            .select('playlist_id')
+            .in('playlist_id', playlistIds);
+          if (playlistTracks) {
+            trackCounts = playlistTracks.reduce<Record<string, number>>((acc, row) => {
+              acc[row.playlist_id] = (acc[row.playlist_id] || 0) + 1;
+              return acc;
+            }, {});
+          }
+        }
+
+        if (!isMounted) return;
+        setPlaylists((playlistData ?? []).map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          coverUrl: item.cover_url || 'default-vinyl',
+          userId,
+          createdAt: item.created_at,
+          updatedAt: item.updated_at,
+          trackCount: trackCounts[item.id] ?? 0
+        })));
+      } catch (error) {
+        console.error('Gagal memuat playlist:', error);
+      }
+
+      try {
+        const { data: recentData } = await supabase
+          .from('recently_played')
+          .select('song_id, played_at')
+          .eq('user_id', userId)
+          .order('played_at', { ascending: false })
+          .limit(20);
+
+        if (!isMounted) return;
+        setRecentlyPlayedEntries((recentData ?? []).map(entry => ({
+          songId: entry.song_id,
+          playedAt: entry.played_at,
+        })));
+      } catch (error) {
+        console.error('Gagal memuat recently played:', error);
+      }
+    };
+
+    fetchUserData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [session]);
+
+  const toggleLike = async (songId: string) => {
+    if (!session?.user?.id) {
       setIsAuthOpen(true);
       return;
     }
-    setSongs(prevSongs => prevSongs.map(s => 
-      s.id === songId ? { ...s, isLiked: !s.isLiked } : s
+    const userId = session.user.id;
+    const alreadyLiked = likedSongIds.includes(songId);
+
+    if (alreadyLiked) {
+      const { error } = await supabase
+        .from('song_likes')
+        .delete()
+        .eq('user_id', userId)
+        .eq('song_id', songId);
+
+      if (error) {
+        alert(`Gagal membatalkan like: ${error.message}`);
+        return;
+      }
+
+      setLikedSongIds(prev => prev.filter(id => id !== songId));
+    } else {
+      const { error } = await supabase
+        .from('song_likes')
+        .insert({ user_id: userId, song_id: songId });
+
+      if (error) {
+        alert(`Gagal menyimpan like: ${error.message}`);
+        return;
+      }
+
+      setLikedSongIds(prev => [...prev, songId]);
+    }
+
+    setSongs(prevSongs => prevSongs.map(song => 
+      song.id === songId ? { ...song, isLiked: !alreadyLiked } : song
     ));
-    if (currentSong && currentSong.id === songId) {
-      setCurrentSong({ ...currentSong, isLiked: !currentSong.isLiked });
+    if (currentSong?.id === songId) {
+      setCurrentSong({ ...currentSong, isLiked: !alreadyLiked });
     }
   };
+
+  const recordRecentlyPlayed = useCallback(async (songId: string) => {
+    if (!session?.user?.id) return;
+    const { error } = await supabase
+      .from('recently_played')
+      .insert({ user_id: session.user.id, song_id: songId });
+    if (error) {
+      console.error('Gagal merekam recently played:', error);
+      return;
+    }
+    setRecentlyPlayedEntries(prev => {
+      const filtered = prev.filter(entry => entry.songId !== songId);
+      return [{ songId, playedAt: new Date().toISOString() }, ...filtered].slice(0, 10);
+    });
+  }, [session]);
 
   const handlePlay = (song: Song) => {
     if (currentSong?.id === song.id) {
@@ -113,10 +263,7 @@ const App: React.FC = () => {
     } else {
       setCurrentSong(song);
       setIsPlaying(true);
-      setRecentlyPlayed(prev => {
-        const filtered = prev.filter(s => s.id !== song.id);
-        return [song, ...filtered].slice(0, 10);
-      });
+      void recordRecentlyPlayed(song.id);
     }
   };
 
@@ -253,7 +400,7 @@ const App: React.FC = () => {
         return (
           <LibraryView 
             likedSongs={songs.filter(s => s.isLiked)} 
-            recentlyPlayed={recentlyPlayed} 
+            recentlyPlayed={recentlyPlayedSongs} 
             onPlay={handlePlay} 
             onToggleLike={toggleLike} 
             onFindMusicClick={() => setCurrentView('search')} 
@@ -261,6 +408,7 @@ const App: React.FC = () => {
             userId={session?.user?.id}
             onEdit={openEditModal}
             onDelete={handleDeleteSong}
+            playlists={playlists}
           />
         );
       case 'profile':
