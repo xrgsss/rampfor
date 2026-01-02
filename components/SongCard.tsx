@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Heart, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import { Song } from '../types';
+import { DEFAULT_COVER_ID, DEFAULT_COVER_IMAGE } from '../constants';
 
 interface SongCardProps {
   song: Song;
@@ -15,20 +16,15 @@ interface SongCardProps {
 }
 
 const DefaultVinyl = () => (
-  <div className="w-full h-full rounded-full bg-black relative flex items-center justify-center overflow-hidden shadow-2xl border-2 border-[#1a1a1a]">
-    <div className="absolute inset-0 bg-[repeating-radial-gradient(circle_at_center,_transparent_0,_transparent_2px,_rgba(255,255,255,0.03)_3px,_transparent_4px)]"></div>
-    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.05)_0%,_transparent_70%)]"></div>
-    <div className="relative z-10 w-[35%] h-[35%] rounded-full bg-gradient-to-br from-[#f0f0f0] via-[#cccccc] to-[#999999] border-2 border-[#333] flex items-center justify-center shadow-inner">
-      <div className="w-3 h-3 rounded-full bg-black border border-[#444]"></div>
-    </div>
-    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-transparent via-white/5 to-transparent -rotate-45 pointer-events-none"></div>
+  <div className="w-full h-full rounded-full overflow-hidden border-2 border-[#1a1a1a] shadow-2xl bg-[#000]">
+    <img src={DEFAULT_COVER_IMAGE} alt="Default vinyl cover" className="w-full h-full object-cover" />
   </div>
 );
 
 const SongCard: React.FC<SongCardProps> = ({ song, isActive, isOwner, onPlay, onToggleLike, onEdit, onDelete, onShowDetail }) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const isDefaultVinyl = song.coverUrl === 'default-vinyl';
+  const isDefaultVinyl = song.coverUrl === DEFAULT_COVER_ID;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { X, Upload, Music, User, Image as ImageIcon, FileAudio } from 'lucide-react';
 import { Song } from '../types';
 import { supabase } from '../services/supabase';
+import { DEFAULT_COVER_ID } from '../constants';
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -75,7 +76,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, us
 
       const audioUrl = supabase.storage.from('music').getPublicUrl(audioFileName).data.publicUrl;
 
-      let coverUrl = 'default-vinyl';
+      let coverUrl = DEFAULT_COVER_ID;
       if (coverFile) {
         const coverFileName = `${Date.now()}_${coverFile.name}`;
         const { error: coverError } = await supabase.storage

@@ -16,6 +16,7 @@ import ConfirmDialog from './components/ConfirmDialog';
 import AuthView from './components/AuthView';
 import { Song, ViewType, Playlist, RepeatMode } from './types';
 import { searchAIsongs } from './services/geminiService';
+import { DEFAULT_COVER_ID } from './constants';
 import { supabase } from './services/supabase';
 
 interface RecentlyPlayedEntry {
@@ -99,7 +100,7 @@ const App: React.FC = () => {
           id: item.id.toString(),
           title: item.title,
           artist: item.artist,
-          coverUrl: item.cover_url || 'default-vinyl',
+          coverUrl: item.cover_url || DEFAULT_COVER_ID,
           audioUrl: item.audio_url,
           plays: item.plays || 0,
           duration: item.duration || 180,
@@ -189,7 +190,7 @@ const App: React.FC = () => {
           id: item.id,
           name: item.name,
           description: item.description,
-          coverUrl: item.cover_url || 'default-vinyl',
+          coverUrl: item.cover_url || DEFAULT_COVER_ID,
           userId,
           createdAt: item.created_at,
           updatedAt: item.updated_at,
@@ -366,7 +367,7 @@ const App: React.FC = () => {
         id: song.id.toString(),
         title: song.title,
         artist: song.artist,
-        coverUrl: song.cover_url || 'default-vinyl',
+        coverUrl: song.cover_url || DEFAULT_COVER_ID,
         audioUrl: song.audio_url,
         plays: song.plays || 0,
         duration: song.duration || 180,
@@ -646,7 +647,7 @@ const App: React.FC = () => {
           user_id: session.user.id,
           name: 'My Playlist',
           description: 'Playlist otomatis',
-          cover_url: 'default-vinyl'
+          cover_url: DEFAULT_COVER_ID
         })
         .select('*')
         .single();
@@ -661,7 +662,7 @@ const App: React.FC = () => {
         id: created.id,
         name: created.name,
         description: created.description,
-        coverUrl: created.cover_url || 'default-vinyl',
+          coverUrl: created.cover_url || DEFAULT_COVER_ID,
         userId: session.user.id,
         createdAt: created.created_at,
         updatedAt: created.updated_at,

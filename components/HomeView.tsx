@@ -3,6 +3,7 @@ import React from 'react';
 import { Flame, Music2, Play, Shuffle } from 'lucide-react';
 import { Song } from '../types';
 import SongCard from './SongCard';
+import { DEFAULT_COVER_ID, DEFAULT_COVER_IMAGE } from '../constants';
 
 interface HomeViewProps {
   songs: Song[];
@@ -95,7 +96,7 @@ const HomeView: React.FC<HomeViewProps> = ({ songs, onPlay, currentSongId, userI
               onClick={() => onPlay(song)}
               className="flex items-center gap-3 bg-[#181818] p-2 rounded-xl text-left hover:bg-[#222] transition-all active:scale-[0.98] border border-white/5"
             >
-              <img src={song.coverUrl === 'default-vinyl' ? 'https://picsum.photos/seed/music/100/100' : song.coverUrl} className="w-10 h-10 rounded-lg object-cover" alt="" />
+              <img src={song.coverUrl === DEFAULT_COVER_ID ? DEFAULT_COVER_IMAGE : song.coverUrl} className="w-10 h-10 rounded-lg object-cover" alt="" />
               <div className="min-w-0">
                 <p className="text-[11px] font-bold text-white truncate leading-tight">{song.title}</p>
                 <p className="text-[9px] text-gray-500 truncate">{song.artist}</p>
@@ -123,7 +124,7 @@ const HomeView: React.FC<HomeViewProps> = ({ songs, onPlay, currentSongId, userI
                 </div>
                 <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden shadow-2xl relative z-10 bg-white/10">
                   <img 
-                    src={featuredSong.coverUrl === 'default-vinyl' ? 'https://picsum.photos/seed/album/400/400' : featuredSong.coverUrl} 
+                    src={featuredSong.coverUrl === DEFAULT_COVER_ID ? DEFAULT_COVER_IMAGE : featuredSong.coverUrl} 
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                     alt="" 
                   />
