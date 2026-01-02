@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Search as SearchIcon, Sparkles } from 'lucide-react';
+import { Search as SearchIcon } from 'lucide-react';
 import { Song } from '../types';
 import SongCard from './SongCard';
 
@@ -48,16 +48,6 @@ const SearchView: React.FC<SearchViewProps> = ({
             onKeyDown={(e) => e.key === 'Enter' && onAiSearch()}
             className="w-full bg-[#121212] border border-[#222] rounded-xl md:rounded-2xl py-3.5 md:py-5 pl-11 md:pl-14 pr-12 md:pr-16 focus:outline-none focus:border-green-500/50 transition-all text-sm md:text-lg font-medium placeholder:text-gray-600"
           />
-          {searchQuery && (
-            <button
-              onClick={onAiSearch}
-              disabled={isSearching}
-              className="absolute right-2.5 md:right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-1.5 bg-green-500 rounded-lg md:rounded-xl text-black font-bold text-[10px] md:text-sm hover:bg-green-400 transition-all active:scale-95 disabled:opacity-50"
-            >
-              <Sparkles size={16} className={isSearching ? 'animate-spin' : ''} />
-              <span className="hidden xs:inline">AI Search</span>
-            </button>
-          )}
         </div>
       </div>
 

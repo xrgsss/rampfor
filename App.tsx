@@ -11,6 +11,7 @@ import TopBar from './components/TopBar';
 import UploadModal from './components/UploadModal';
 import EditSongModal from './components/EditSongModal';
 import SongDetailView from './components/SongDetailView';
+import PlaylistDetailView from './components/PlaylistDetailView';
 import AuthView from './components/AuthView';
 import { Song, ViewType, Playlist, RepeatMode } from './types';
 import { searchAIsongs } from './services/geminiService';
@@ -45,6 +46,11 @@ const App: React.FC = () => {
     if (!session?.user?.id) return [];
     return songs.filter(song => song.userId === session.user.id);
   }, [songs, session?.user?.id]);
+  const [pendingPlaylistSong, setPendingPlaylistSong] = useState<Song | null>(null);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
+  const [playlistSongs, setPlaylistSongs] = useState<Song[]>([]);
+  const [isPlaylistLoading, setIsPlaylistLoading] = useState(false);
+  const [playlistError, setPlaylistError] = useState<string | null>(null);
   
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -311,6 +317,44 @@ const App: React.FC = () => {
     });
   }, [session]);
 
+  const fetchPlaylistSongs = useCallback(async (playlistId: string) => {
+    if (!playlistId || !session?.user?.id) {
+      setPlaylistSongs([]);
+      return;
+    }
+    setPlaylistError(null);
+    setIsPlaylistLoading(true);
+    const { data, error } = await supabase
+      .from('playlist_tracks')
+      .select('song_id, songs(*)')
+      .eq('playlist_id', playlistId);
+    setIsPlaylistLoading(false);
+    if (error) {
+      setPlaylistSongs([]);
+      setPlaylistError(error.message);
+      return;
+    }
+    if (!data) {
+      setPlaylistSongs([]);
+      return;
+    }
+    const formatted = (data ?? [])
+      .map((entry: any) => ({ ...entry.songs }))
+      .filter((song: any): song is any => Boolean(song))
+      .map((song: any) => ({
+        id: song.id.toString(),
+        title: song.title,
+        artist: song.artist,
+        coverUrl: song.cover_url || 'default-vinyl',
+        audioUrl: song.audio_url,
+        plays: song.plays || 0,
+        duration: song.duration || 180,
+        isLiked: likedSongIds.includes(song.id.toString()),
+        userId: song.user_id
+      }));
+    setPlaylistSongs(formatted);
+  }, [likedSongIds]);
+
   const handlePlay = (song: Song) => {
     if (currentSong?.id === song.id) {
       setIsPlaying(!isPlaying);
@@ -457,6 +501,21 @@ const App: React.FC = () => {
     setCurrentView(prevView);
   };
 
+  const openPlaylistDetail = useCallback((playlist: Playlist) => {
+    setSelectedPlaylist(playlist);
+    void fetchPlaylistSongs(playlist.id);
+    if (currentView !== 'playlist-detail') {
+      setPrevView(currentView);
+    }
+    setCurrentView('playlist-detail');
+    setFocusPlaylists(false);
+  }, [currentView, fetchPlaylistSongs]);
+
+  const closePlaylistDetail = () => {
+    setSelectedPlaylist(null);
+    setCurrentView(prevView);
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setCurrentView('home');
@@ -468,10 +527,137 @@ const App: React.FC = () => {
     }
   }, [currentView, currentSong]);
 
+  useEffect(() => {
+    if (!selectedPlaylist) {
+      setPlaylistSongs([]);
+      setPlaylistError(null);
+      return;
+    }
+    void fetchPlaylistSongs(selectedPlaylist.id);
+  }, [selectedPlaylist, fetchPlaylistSongs]);
+
+  useEffect(() => {
+    if (currentView === 'playlist-detail' && selectedPlaylist) {
+      void fetchPlaylistSongs(selectedPlaylist.id);
+    }
+  }, [currentView, selectedPlaylist, fetchPlaylistSongs]);
+
   const filteredSongs = songs.filter(s => 
     s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     s.artist.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const [focusPlaylists, setFocusPlaylists] = useState(false);
+
+  const removeSongFromPlaylist = useCallback(async (song: Song, playlist?: Playlist) => {
+    const target = playlist ?? selectedPlaylist;
+    if (!target) return;
+    const { error } = await supabase
+      .from('playlist_tracks')
+      .delete()
+      .eq('playlist_id', target.id)
+      .eq('song_id', song.id);
+
+    if (!error) {
+      setPlaylists(prev => prev.map(p => p.id === target.id ? { ...p, trackCount: Math.max(0, p.trackCount - 1) } : p));
+      setPlaylistSongs(prev => prev.filter(s => s.id !== song.id));
+    } else {
+      console.error('Gagal menghapus lagu dari playlist:', error);
+    }
+  }, [selectedPlaylist]);
+
+  const addSongToPlaylist = useCallback(async (song: Song, playlist?: Playlist) => {
+    if (!session?.user?.id) {
+      setIsAuthOpen(true);
+      setPendingPlaylistSong(song);
+      return;
+    }
+
+    const targetPlaylist = playlist ?? selectedPlaylist ?? playlists[0];
+    let selected = targetPlaylist;
+    if (!selected) {
+      const { data: created, error } = await supabase
+        .from('playlists')
+        .insert({
+          user_id: session.user.id,
+          name: 'My Playlist',
+          description: 'Playlist otomatis',
+          cover_url: 'default-vinyl'
+        })
+        .select('*')
+        .single();
+
+      if (error || !created) {
+        console.error('Gagal membuat playlist otomatis:', error);
+        setPendingPlaylistSong(null);
+        return;
+      }
+
+      const newPlaylist: Playlist = {
+        id: created.id,
+        name: created.name,
+        description: created.description,
+        coverUrl: created.cover_url || 'default-vinyl',
+        userId: session.user.id,
+        createdAt: created.created_at,
+        updatedAt: created.updated_at,
+        trackCount: 0
+      };
+      setPlaylists(prev => [newPlaylist, ...prev]);
+      selected = newPlaylist;
+      if (!playlist) {
+        setSelectedPlaylist(newPlaylist);
+      }
+    }
+
+    const { data: existing } = await supabase
+      .from('playlist_tracks')
+      .select('id')
+      .eq('playlist_id', selected.id)
+      .eq('song_id', song.id)
+      .single();
+
+    if (!existing) {
+      const { error } = await supabase
+        .from('playlist_tracks')
+        .insert({
+          playlist_id: selected.id,
+          song_id: song.id
+        });
+
+      if (!error) {
+        setPlaylists(prev => prev.map(p => p.id === selected!.id ? { ...p, trackCount: p.trackCount + 1 } : p));
+        if (selectedPlaylist?.id === selected?.id) {
+          await fetchPlaylistSongs(selected.id);
+        }
+      } else {
+        console.error('Gagal menambahkan lagu ke playlist:', error);
+      }
+    }
+
+    setPendingPlaylistSong(null);
+  }, [session?.user?.id, playlists, selectedPlaylist, fetchPlaylistSongs]);
+
+  useEffect(() => {
+    if (!pendingPlaylistSong || !session?.user?.id) return;
+    void addSongToPlaylist(pendingPlaylistSong);
+  }, [pendingPlaylistSong, addSongToPlaylist, session?.user?.id]);
+
+  const openPlaylists = useCallback(async (song?: Song) => {
+    if (currentView !== 'library') {
+      setPrevView(currentView);
+    }
+    setCurrentView('library');
+    setFocusPlaylists(true);
+    if (song) {
+      const isInPlaylist = selectedPlaylist && playlistSongs.some(s => s.id === song.id);
+      if (isInPlaylist && selectedPlaylist) {
+        await removeSongFromPlaylist(song, selectedPlaylist);
+        return;
+      }
+      setPendingPlaylistSong(song);
+    }
+  }, [currentView, playlistSongs, removeSongFromPlaylist, selectedPlaylist]);
 
   const renderContent = () => {
     switch (currentView) {
@@ -522,8 +708,26 @@ const App: React.FC = () => {
             onDelete={handleDeleteSong}
             playlists={playlists}
             onShowDetail={openSongDetail}
+            focusPlaylists={focusPlaylists}
+            onFocusedPlaylists={() => setFocusPlaylists(false)}
+            onOpenPlaylistDetail={openPlaylistDetail}
           />
         );
+      case 'playlist-detail':
+        return selectedPlaylist ? (
+          <PlaylistDetailView 
+            playlist={selectedPlaylist}
+            songs={playlistSongs}
+            onBack={closePlaylistDetail}
+            onPlay={handlePlay}
+            onToggleLike={toggleLike}
+            onRemoveSong={(song) => removeSongFromPlaylist(song, selectedPlaylist)}
+            onShowDetail={openSongDetail}
+            currentSongId={currentSong?.id}
+            isLoading={isPlaylistLoading}
+            error={playlistError}
+          />
+        ) : null;
       case 'profile':
       return (
         <ProfileView 
@@ -567,8 +771,8 @@ const App: React.FC = () => {
         </div>
         
         {currentSong && (
-          <PlayerBar 
-            currentSong={currentSong} 
+        <PlayerBar 
+          currentSong={currentSong} 
             isPlaying={isPlaying} 
             onTogglePlay={() => setIsPlaying(!isPlaying)} 
             onNext={handleNext} 
@@ -582,11 +786,12 @@ const App: React.FC = () => {
             onOpenDetail={openSongDetail} 
             repeatMode={repeatMode}
             isShuffle={isShuffle}
-            onToggleShuffle={toggleShuffle}
-            onToggleRepeat={toggleRepeatMode}
-            onShare={shareSong}
-          />
-        )}
+          onToggleShuffle={toggleShuffle}
+          onToggleRepeat={toggleRepeatMode}
+          onShare={shareSong}
+          onOpenPlaylists={openPlaylists}
+        />
+      )}
       </main>
       <BottomNav currentView={currentView} onNavigate={setCurrentView} />
       
@@ -625,6 +830,7 @@ const App: React.FC = () => {
           repeatMode={repeatMode}
           onToggleRepeat={toggleRepeatMode}
           onShare={shareSong}
+          onOpenPlaylists={openPlaylists}
         />
       )}
       <audio ref={audioRef} src={currentSong?.audioUrl} onTimeUpdate={onTimeUpdate} onLoadedMetadata={onTimeUpdate} onEnded={handleNext} />

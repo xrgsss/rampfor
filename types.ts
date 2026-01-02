@@ -9,6 +9,7 @@ export interface Song {
   duration: number;
   isLiked?: boolean;
   userId?: string;
+  playlistTrackId?: string;
 }
 
 export interface Playlist {
@@ -32,4 +33,4 @@ export interface PlayerState {
   queue: Song[];
 }
 
-export type ViewType = 'home' | 'search' | 'library' | 'profile' | 'feed' | 'upgrade' | 'song-detail';
+export type ViewType = 'home' | 'search' | 'library' | 'profile' | 'feed' | 'upgrade' | 'song-detail' | 'playlist-detail';

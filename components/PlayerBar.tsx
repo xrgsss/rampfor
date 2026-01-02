@@ -33,6 +33,7 @@ interface PlayerBarProps {
   onToggleShuffle: () => void;
   onToggleRepeat: () => void;
   onShare: (song: Song) => void;
+  onOpenPlaylists: (song?: Song) => void;
 }
 
 const PlayerBar: React.FC<PlayerBarProps> = ({ 
@@ -52,7 +53,8 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   isShuffle,
   onToggleShuffle,
   onToggleRepeat,
-  onShare
+  onShare,
+  onOpenPlaylists
 }) => {
 
   const isLiked = currentSong?.isLiked || false;
@@ -162,9 +164,6 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2.5 md:gap-4 flex-shrink-0 pr-2">
-          <button className="text-gray-400 hover:text-white md:hidden active:scale-90 transition-all p-1">
-            <MonitorSpeaker size={22} strokeWidth={1.5} />
-          </button>
           <button 
             onClick={() => currentSong && onToggleLike(currentSong.id)}
             className={`p-1 transition-all active:scale-75 ${isLiked ? 'text-red-500' : 'text-gray-400 hover:text-white'}`}
@@ -180,7 +179,12 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           
           {/* Desktop Volume Slider */}
           <div className="hidden md:flex items-center gap-4 ml-2">
-            <button className="text-gray-500 hover:text-white transition-colors"><ListMusic size={20} /></button>
+            <button
+              onClick={() => currentSong && onOpenPlaylists(currentSong)}
+              className="text-gray-500 hover:text-white transition-colors"
+            >
+              <ListMusic size={20} />
+            </button>
             <div className="flex items-center gap-2 group/vol w-24">
               <Volume2 size={18} className="text-gray-500 group-hover/vol:text-white" />
               <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => onVolumeChange(parseFloat(e.target.value))} className="w-full h-1 bg-[#222] rounded-full appearance-none accent-white cursor-pointer" />

@@ -29,6 +29,7 @@ interface SongDetailViewProps {
   repeatMode: RepeatMode;
   onToggleRepeat: () => void;
   onShare: (song: Song) => void;
+  onOpenPlaylists: (song?: Song) => void;
 }
 
 const SongDetailView: React.FC<SongDetailViewProps> = ({
@@ -46,7 +47,8 @@ const SongDetailView: React.FC<SongDetailViewProps> = ({
   onToggleLike,
   repeatMode,
   onToggleRepeat,
-  onShare
+  onShare,
+  onOpenPlaylists
 }) => {
   const progressPercent = (progress / (duration || 1)) * 100;
   
@@ -87,7 +89,7 @@ const SongDetailView: React.FC<SongDetailViewProps> = ({
           <ChevronLeft size={22} strokeWidth={2.5} />
         </button>
         <h4 className="text-[9px] font-black uppercase tracking-[0.5em] text-white/30">Playing Now</h4>
-        <button className="text-white/40 hover:text-white transition-colors p-1">
+        <button onClick={() => onOpenPlaylists(song)} className="text-white/40 hover:text-white transition-colors p-1">
           <ListMusic size={20} />
         </button>
       </header>

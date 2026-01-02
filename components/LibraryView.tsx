@@ -16,6 +16,9 @@ interface LibraryViewProps {
   onDelete?: (id: string) => void;
   playlists: Playlist[];
   onShowDetail: (song: Song) => void;
+  focusPlaylists?: boolean;
+  onFocusedPlaylists?: () => void;
+  onOpenPlaylistDetail: (playlist: Playlist) => void;
 }
 
 const LibraryView: React.FC<LibraryViewProps> = ({ 
@@ -29,8 +32,20 @@ const LibraryView: React.FC<LibraryViewProps> = ({
   onEdit,
   onDelete,
   playlists,
-  onShowDetail
+  onShowDetail,
+  focusPlaylists,
+  onFocusedPlaylists,
+  onOpenPlaylistDetail
 }) => {
+  const playlistRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    if (focusPlaylists && playlistRef.current) {
+      playlistRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      onFocusedPlaylists?.();
+    }
+  }, [focusPlaylists, onFocusedPlaylists]);
+
   return (
     <div className="flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <header>
@@ -126,20 +141,18 @@ const LibraryView: React.FC<LibraryViewProps> = ({
           </button>
         </div>
 
-        {playlists.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
+        <div ref={playlistRef} className={`${focusPlaylists ? 'ring-2 ring-green-500/70 rounded-2xl' : ''} transition-all`}>
+          
+          {playlists.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
             {playlists.map(playlist => {
-              const coverImage = playlist.coverUrl === 'default-vinyl'
-                ? 'https://picsum.photos/seed/playlist/400/400'
-                : playlist.coverUrl;
               return (
-                <div 
+                <button
                   key={playlist.id}
-                  className="group bg-[#121212] border border-[#1a1a1a] p-4 rounded-2xl hover:bg-[#1a1a1a] transition-all cursor-pointer relative overflow-hidden"
+                  onClick={() => onOpenPlaylistDetail(playlist)}
+                  className="group bg-[#121212] border border-[#1a1a1a] p-4 rounded-2xl hover:bg-[#1a1a1a] transition-all cursor-pointer relative overflow-hidden text-left"
                 >
-                  <div className="absolute inset-0 overflow-hidden">
-                    <img src={coverImage} alt={playlist.name} className="w-full h-full object-cover opacity-10 group-hover:opacity-20 transition-opacity" />
-                  </div>
+                  <div className={`absolute inset-0 ${focusPlaylists ? 'bg-gradient-to-br from-purple-600/60 via-purple-700/50 to-black' : 'bg-gradient-to-br from-purple-900/60 via-purple-800/40 to-black'}`} />
                   <div className="flex flex-col h-full relative z-10">
                     <div className="flex items-center justify-between mb-2">
                       <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500 shadow-xl">
@@ -150,7 +163,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({
                     <h3 className="font-bold text-lg mb-1 group-hover:text-green-500 transition-colors">{playlist.name}</h3>
                     <p className="text-gray-500 text-xs line-clamp-2">{playlist.description || 'Playlist kosong'}</p>
                   </div>
-                </div>
+                </button>
               );
             })}
             <button className="border-2 border-dashed border-[#222] rounded-2xl p-4 flex flex-col items-center justify-center gap-3 text-gray-500 hover:border-green-500/50 hover:text-green-500 transition-all min-h-[160px]">
@@ -166,6 +179,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({
             </button>
           </div>
         )}
+        </div>
       </section>
     </div>
   );
