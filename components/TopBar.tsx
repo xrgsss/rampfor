@@ -13,7 +13,16 @@ const TopBar: React.FC<TopBarProps> = ({ user, onProfileClick, currentView, onLo
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
 
-  const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
+  const getNameFromEmail = (email?: string) => {
+    if (!email) return undefined;
+    return email.split('@')[0];
+  };
+
+  const displayName =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    getNameFromEmail(user?.email) ||
+    'User';
   
   const getInitials = (name: string) => {
     return name
