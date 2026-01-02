@@ -778,7 +778,6 @@ const App: React.FC = () => {
         <ProfileView 
           user={session?.user} 
           userSongs={userSongs}
-          availableSongs={songs}
           currentSongId={currentSong?.id}
           onPlay={handlePlay}
           onToggleLike={toggleLike}

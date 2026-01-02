@@ -8,7 +8,6 @@ import SongCard from './SongCard';
 interface ProfileViewProps {
   user: any;
   userSongs: Song[];
-  availableSongs: Song[];
   currentSongId?: string;
   onPlay: (song: Song) => void;
   onToggleLike: (id: string) => void;
@@ -23,7 +22,6 @@ interface ProfileViewProps {
 const ProfileView: React.FC<ProfileViewProps> = ({
   user,
   userSongs,
-  availableSongs,
   currentSongId,
   onPlay,
   onToggleLike,
@@ -227,19 +225,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
         {userSongs.length === 0 ? (
           <>
-            <p className="text-gray-400 text-sm italic">Kamu belum mengunggah musik apa pun. Berikut koleksi yang tersedia sekarang.</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-              {availableSongs.map(song => (
-                <SongCard
-                  key={song.id}
-                  song={song}
-                  isActive={currentSongId === song.id}
-                  onPlay={onPlay}
-                  onToggleLike={onToggleLike}
-                  onShowDetail={onShowDetail}
-                />
-              ))}
-            </div>
+        <p className="text-gray-400 text-sm italic">Kamu belum mengunggah musik apa pun.</p>
           </>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
