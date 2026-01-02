@@ -743,6 +743,7 @@ const App: React.FC = () => {
             onToggleShuffle={toggleShuffle}
             isShuffle={isShuffle}
             onShowDetail={openSongDetail}
+            onNavigateToLibrary={() => setCurrentView('library')}
           />
         );
       case 'search':

@@ -16,9 +16,10 @@ interface HomeViewProps {
   onToggleShuffle: () => void;
   isShuffle: boolean;
   onShowDetail: (song: Song) => void;
+  onNavigateToLibrary: () => void;
 }
 
-const HomeView: React.FC<HomeViewProps> = ({ songs, onPlay, currentSongId, userId, onEdit, onDelete, onToggleLike, onToggleShuffle, isShuffle, onShowDetail }) => {
+  const HomeView: React.FC<HomeViewProps> = ({ songs, onPlay, currentSongId, userId, onEdit, onDelete, onToggleLike, onToggleShuffle, isShuffle, onShowDetail, onNavigateToLibrary }) => {
   if (songs.length === 0) {
     return (
       <div className="flex flex-col gap-6 md:gap-10 pb-20 animate-in fade-in duration-700">
@@ -78,7 +79,13 @@ const HomeView: React.FC<HomeViewProps> = ({ songs, onPlay, currentSongId, userI
                     <Flame size={24} className="text-black" fill="currentColor" />
                   </div>
                </div>
-               <span className="text-lg font-bold">Your likes</span>
+               <button
+                 type="button"
+                 className="text-lg font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+                 onClick={onNavigateToLibrary}
+               >
+                 Your likes
+               </button>
             </div>
           <button
             onClick={onToggleShuffle}

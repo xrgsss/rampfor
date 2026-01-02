@@ -196,7 +196,7 @@ const SongDetailView: React.FC<SongDetailViewProps> = ({
           </button>
         </div>
 
-        <div className="w-full flex items-center gap-3 mt-6">
+        <div className="w-full hidden md:flex items-center gap-3 mt-6">
           <span className="text-[10px] font-bold text-white/40 tracking-[0.5em] uppercase">Volume</span>
           <input 
             type="range" 
