@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Shuffle, Flame, Music2, Play, Plus } from 'lucide-react';
+import { Flame, Music2, Play, Shuffle } from 'lucide-react';
 import { Song } from '../types';
 import SongCard from './SongCard';
 
@@ -11,9 +11,12 @@ interface HomeViewProps {
   userId?: string;
   onEdit?: (song: Song) => void;
   onDelete?: (id: string) => void;
+  onToggleLike: (id: string) => void;
+  onToggleShuffle: () => void;
+  isShuffle: boolean;
 }
 
-const HomeView: React.FC<HomeViewProps> = ({ songs, onPlay, currentSongId, userId, onEdit, onDelete }) => {
+const HomeView: React.FC<HomeViewProps> = ({ songs, onPlay, currentSongId, userId, onEdit, onDelete, onToggleLike, onToggleShuffle, isShuffle }) => {
   if (songs.length === 0) {
     return (
       <div className="flex flex-col gap-6 md:gap-10 pb-20 animate-in fade-in duration-700">
@@ -58,7 +61,7 @@ const HomeView: React.FC<HomeViewProps> = ({ songs, onPlay, currentSongId, userI
           <h3 className="text-2xl font-black text-white tracking-tighter leading-tight drop-shadow-xl">
             Happy New Year 2026
           </h3>
-          <p className="mt-2 text-[9px] font-black uppercase tracking-[0.2em] text-white/60">Update in App Store</p>
+          <p className="mt-2 text-[9px] font-black uppercase tracking-[0.2em] text-white/60">Dengarkan & bagikan musikmu ke siapa aja</p>
         </div>
         <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-orange-500/20 blur-3xl rounded-full"></div>
       </div>
@@ -75,9 +78,12 @@ const HomeView: React.FC<HomeViewProps> = ({ songs, onPlay, currentSongId, userI
                </div>
                <span className="text-lg font-bold">Your likes</span>
             </div>
-            <button className="p-2.5 bg-[#1a1a1a] rounded-xl text-gray-400 hover:text-white transition-all active:scale-95">
-              <Shuffle size={20} />
-            </button>
+          <button
+            onClick={onToggleShuffle}
+            className={`relative p-2.5 bg-[#1a1a1a] rounded-xl transition-all active:scale-95 ${isShuffle ? 'text-green-400 border border-green-500/40' : 'text-gray-400 hover:text-white'}`}
+          >
+            <Shuffle size={20} />
+          </button>
           </div>
         </div>
 
@@ -151,7 +157,7 @@ const HomeView: React.FC<HomeViewProps> = ({ songs, onPlay, currentSongId, userI
         </div>
       </div>
 
-      <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8 mt-4">
+        <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8 mt-4">
         {songs.map(song => (
           <SongCard 
             key={song.id} 
@@ -159,6 +165,7 @@ const HomeView: React.FC<HomeViewProps> = ({ songs, onPlay, currentSongId, userI
             isActive={currentSongId === song.id}
             isOwner={userId === song.userId}
             onPlay={onPlay}
+            onToggleLike={onToggleLike}
             onEdit={onEdit}
             onDelete={onDelete}
           />

@@ -12,7 +12,7 @@ import UploadModal from './components/UploadModal';
 import EditSongModal from './components/EditSongModal';
 import SongDetailView from './components/SongDetailView';
 import AuthView from './components/AuthView';
-import { Song, ViewType, Playlist } from './types';
+import { Song, ViewType, Playlist, RepeatMode } from './types';
 import { searchAIsongs } from './services/geminiService';
 import { supabase } from './services/supabase';
 
@@ -39,6 +39,8 @@ const App: React.FC = () => {
   const [recentlyPlayedEntries, setRecentlyPlayedEntries] = useState<RecentlyPlayedEntry[]>([]);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<RepeatMode>('none');
+  const [isShuffle, setIsShuffle] = useState(false);
   
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -107,12 +109,15 @@ const App: React.FC = () => {
     }
   }, [volume]);
 
+  const songsLength = songs.length;
+
   useEffect(() => {
+    if (songsLength === 0) return;
     setSongs(prevSongs => prevSongs.map(song => ({
       ...song,
       isLiked: likedSongIds.includes(song.id),
     })));
-  }, [likedSongIds]);
+  }, [likedSongIds, songsLength]);
 
   useEffect(() => {
     if (!session?.user?.id) {
@@ -184,10 +189,16 @@ const App: React.FC = () => {
           .limit(20);
 
         if (!isMounted) return;
-        setRecentlyPlayedEntries((recentData ?? []).map(entry => ({
-          songId: entry.song_id,
-          playedAt: entry.played_at,
-        })));
+        setRecentlyPlayedEntries(() => {
+          const seen = new Set<string>();
+          const uniqueEntries: RecentlyPlayedEntry[] = [];
+          (recentData ?? []).forEach(entry => {
+            if (seen.has(entry.song_id)) return;
+            seen.add(entry.song_id);
+            uniqueEntries.push({ songId: entry.song_id, playedAt: entry.played_at });
+          });
+          return uniqueEntries;
+        });
       } catch (error) {
         console.error('Gagal memuat recently played:', error);
       }
@@ -199,6 +210,45 @@ const App: React.FC = () => {
       isMounted = false;
     };
   }, [session]);
+
+  const toggleShuffle = useCallback(() => {
+    setIsShuffle(prev => !prev);
+  }, []);
+
+  const shareSong = useCallback((song: Song) => {
+    if (typeof window === 'undefined') return;
+    const origin = window.location.origin;
+    const shareUrl = `${origin}/?song=${song.id}`;
+    const shareText = `Dengarkan "${song.title}" dari ${song.artist} di Rampfor Music`;
+
+    const handleFallback = () => {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(shareUrl).catch(() => {
+          // ignore, we'll still show the prompt below
+        });
+      }
+      window.prompt('Salin link ini:', shareUrl);
+    };
+
+    if (navigator.share) {
+      navigator.share({
+        title: song.title,
+        text: shareText,
+        url: shareUrl,
+      }).catch(() => {
+        handleFallback();
+      });
+    } else {
+      handleFallback();
+    }
+  }, []);
+
+  const pickRandomSong = useCallback((excludeId?: string) => {
+    if (songs.length === 0) return null;
+    const filtered = excludeId ? songs.filter(song => song.id !== excludeId) : songs;
+    const pool = filtered.length > 0 ? filtered : songs;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }, [songs]);
 
   const toggleLike = async (songId: string) => {
     if (!session?.user?.id) {
@@ -267,6 +317,10 @@ const App: React.FC = () => {
     }
   };
 
+  const toggleRepeatMode = () => {
+    setRepeatMode(prev => prev === 'none' ? 'all' : prev === 'all' ? 'one' : 'none');
+  };
+
   const handleUploadSong = (newSong: Song) => {
     setSongs(prev => [newSong, ...prev]);
     if (!currentSong) setCurrentSong(newSong);
@@ -316,15 +370,54 @@ const App: React.FC = () => {
   };
 
   const handleNext = () => {
-    if (songs.length === 0 || !currentSong) return;
+    if (!currentSong) return;
+    if (repeatMode === 'one') {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => setIsPlaying(false));
+      }
+      setIsPlaying(true);
+      return;
+    }
+    if (isShuffle) {
+      const randomSong = pickRandomSong(currentSong.id);
+      if (randomSong) {
+        handlePlay(randomSong);
+        return;
+      }
+    }
+    if (songs.length === 0) return;
     const currentIndex = songs.findIndex(s => s.id === currentSong.id);
+    if (currentIndex === -1) return;
+    const atEnd = currentIndex === songs.length - 1;
+    if (repeatMode === 'none' && atEnd) {
+      setIsPlaying(false);
+      return;
+    }
     const nextIndex = (currentIndex + 1) % songs.length;
     handlePlay(songs[nextIndex]);
   };
 
   const handlePrev = () => {
-    if (songs.length === 0 || !currentSong) return;
+    if (!currentSong) return;
+    if (repeatMode === 'one') {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => setIsPlaying(false));
+      }
+      setIsPlaying(true);
+      return;
+    }
+    if (isShuffle) {
+      const randomSong = pickRandomSong(currentSong.id);
+      if (randomSong) {
+        handlePlay(randomSong);
+        return;
+      }
+    }
+    if (songs.length === 0) return;
     const currentIndex = songs.findIndex(s => s.id === currentSong.id);
+    if (currentIndex === -1) return;
     const prevIndex = (currentIndex - 1 + songs.length) % songs.length;
     handlePlay(songs[prevIndex]);
   };
@@ -377,6 +470,9 @@ const App: React.FC = () => {
             userId={session?.user?.id}
             onEdit={openEditModal}
             onDelete={handleDeleteSong}
+            onToggleLike={toggleLike}
+            onToggleShuffle={toggleShuffle}
+            isShuffle={isShuffle}
           />
         );
       case 'search':
@@ -460,6 +556,11 @@ const App: React.FC = () => {
             onVolumeChange={setVolume} 
             onToggleLike={toggleLike} 
             onOpenDetail={openSongDetail} 
+            repeatMode={repeatMode}
+            isShuffle={isShuffle}
+            onToggleShuffle={toggleShuffle}
+            onToggleRepeat={toggleRepeatMode}
+            onShare={shareSong}
           />
         )}
       </main>
@@ -484,7 +585,23 @@ const App: React.FC = () => {
       )}
 
       {currentView === 'song-detail' && currentSong && (
-        <SongDetailView song={currentSong} isPlaying={isPlaying} progress={currentTime} duration={duration} volume={volume} onClose={closeSongDetail} onTogglePlay={() => setIsPlaying(!isPlaying)} onNext={handleNext} onPrev={handlePrev} onSeek={onSeek} onVolumeChange={setVolume} onToggleLike={toggleLike} />
+        <SongDetailView 
+          song={currentSong} 
+          isPlaying={isPlaying} 
+          progress={currentTime} 
+          duration={duration} 
+          volume={volume} 
+          onClose={closeSongDetail} 
+          onTogglePlay={() => setIsPlaying(!isPlaying)} 
+          onNext={handleNext} 
+          onPrev={handlePrev} 
+          onSeek={onSeek} 
+          onVolumeChange={setVolume} 
+          onToggleLike={toggleLike}
+          repeatMode={repeatMode}
+          onToggleRepeat={toggleRepeatMode}
+          onShare={shareSong}
+        />
       )}
       <audio ref={audioRef} src={currentSong?.audioUrl} onTimeUpdate={onTimeUpdate} onLoadedMetadata={onTimeUpdate} onEnded={handleNext} />
     </div>

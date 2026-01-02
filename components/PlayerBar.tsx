@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   SkipBack, 
   SkipForward, 
@@ -9,11 +9,11 @@ import {
   Shuffle, 
   Repeat, 
   Heart, 
-  UserPlus, 
+  Share,
   ListMusic,
   MonitorSpeaker
 } from 'lucide-react';
-import { Song } from '../types';
+import { Song, RepeatMode } from '../types';
 
 interface PlayerBarProps {
   currentSong: Song | null;
@@ -28,6 +28,11 @@ interface PlayerBarProps {
   onVolumeChange: (value: number) => void;
   onToggleLike: (id: string) => void;
   onOpenDetail?: () => void;
+  repeatMode: RepeatMode;
+  isShuffle: boolean;
+  onToggleShuffle: () => void;
+  onToggleRepeat: () => void;
+  onShare: (song: Song) => void;
 }
 
 const PlayerBar: React.FC<PlayerBarProps> = ({ 
@@ -42,16 +47,12 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   volume,
   onVolumeChange,
   onToggleLike,
-  onOpenDetail
+  onOpenDetail,
+  repeatMode,
+  isShuffle,
+  onToggleShuffle,
+  onToggleRepeat
 }) => {
-  const [isShuffle, setIsShuffle] = useState(false);
-  const [repeatMode, setRepeatMode] = useState<'none' | 'all' | 'one'>('none');
-
-  const toggleRepeat = () => {
-    if (repeatMode === 'none') setRepeatMode('all');
-    else if (repeatMode === 'all') setRepeatMode('one');
-    else setRepeatMode('none');
-  };
 
   const isLiked = currentSong?.isLiked || false;
   const progressPercent = (progress / (duration || 1)) * 100;
@@ -140,7 +141,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
 
         {/* Center: Desktop Controls Only */}
         <div className="hidden md:flex flex-1 items-center justify-center gap-6">
-          <button onClick={() => setIsShuffle(!isShuffle)} className={`p-2 transition-colors ${isShuffle ? 'text-white' : 'text-gray-500 hover:text-white'}`}>
+          <button onClick={onToggleShuffle} className={`p-2 transition-colors ${isShuffle ? 'text-white' : 'text-gray-500 hover:text-white'}`}>
             <Shuffle size={18} />
           </button>
           <button onClick={onPrev} className="p-2 text-white hover:text-white/70 transition-colors">
@@ -152,7 +153,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           <button onClick={onNext} className="p-2 text-white hover:text-white/70 transition-colors">
             <SkipForward size={24} fill="currentColor" />
           </button>
-          <button onClick={toggleRepeat} className={`p-2 transition-colors relative ${repeatMode !== 'none' ? 'text-white' : 'text-gray-500 hover:text-white'}`}>
+          <button onClick={onToggleRepeat} className={`p-2 transition-colors relative ${repeatMode === 'none' ? 'text-gray-500 hover:text-white' : 'text-white'}`}>
             <Repeat size={18} />
             {repeatMode === 'one' && <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[8px] font-bold mt-0.5 text-black">1</span>}
           </button>
@@ -169,10 +170,15 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           >
             <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} strokeWidth={1.5} />
           </button>
+          <button 
+            onClick={() => currentSong && onShare(currentSong)}
+            className="p-1 transition-all active:scale-75 text-gray-400 hover:text-white"
+          >
+            <Share size={20} strokeWidth={1.5} />
+          </button>
           
           {/* Desktop Volume Slider */}
           <div className="hidden md:flex items-center gap-4 ml-2">
-            <button className="text-gray-500 hover:text-white transition-colors"><UserPlus size={18} /></button>
             <button className="text-gray-500 hover:text-white transition-colors"><ListMusic size={20} /></button>
             <div className="flex items-center gap-2 group/vol w-24">
               <Volume2 size={18} className="text-gray-500 group-hover/vol:text-white" />

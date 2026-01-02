@@ -22,6 +22,8 @@ export interface Playlist {
   trackCount: number;
 }
 
+export type RepeatMode = 'none' | 'all' | 'one';
+
 export interface PlayerState {
   currentSong: Song | null;
   isPlaying: boolean;

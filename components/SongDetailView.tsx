@@ -8,9 +8,10 @@ import {
   Play, 
   Pause, 
   SkipForward, 
-  Repeat
+  Repeat,
+  Share
 } from 'lucide-react';
-import { Song } from '../types';
+import { Song, RepeatMode } from '../types';
 
 interface SongDetailViewProps {
   song: Song;
@@ -25,6 +26,9 @@ interface SongDetailViewProps {
   onSeek: (val: number) => void;
   onVolumeChange: (val: number) => void;
   onToggleLike: (id: string) => void;
+  repeatMode: RepeatMode;
+  onToggleRepeat: () => void;
+  onShare: (song: Song) => void;
 }
 
 const SongDetailView: React.FC<SongDetailViewProps> = ({
@@ -38,7 +42,11 @@ const SongDetailView: React.FC<SongDetailViewProps> = ({
   onNext,
   onPrev,
   onSeek,
-  onToggleLike
+  onVolumeChange,
+  onToggleLike,
+  repeatMode,
+  onToggleRepeat,
+  onShare
 }) => {
   const progressPercent = (progress / (duration || 1)) * 100;
   
@@ -146,6 +154,12 @@ const SongDetailView: React.FC<SongDetailViewProps> = ({
           >
             <Heart size={18} fill={song.isLiked ? 'currentColor' : 'none'} strokeWidth={2.5} />
           </button>
+          <button 
+            onClick={() => onShare(song)}
+            className="transition-all active:scale-75 p-2 text-gray-400 hover:text-white"
+          >
+            <Share size={18} strokeWidth={1.5} />
+          </button>
 
           <div className="flex items-center gap-6">
             <button onClick={onPrev} className="text-white/30 hover:text-white transition-all active:scale-90 p-2">
@@ -172,9 +186,30 @@ const SongDetailView: React.FC<SongDetailViewProps> = ({
             </button>
           </div>
 
-          <button className="text-white/15 hover:text-white transition-all p-2">
+          <button 
+            onClick={onToggleRepeat}
+            className={`text-white/15 hover:text-white transition-all p-2 relative ${repeatMode === 'none' ? '' : 'text-green-400'}`}
+          >
             <Repeat size={18} />
+            {repeatMode === 'one' && (
+              <span className="absolute -top-1 -right-1 text-[8px] font-black bg-green-500 text-black rounded-full px-1">
+                1
+              </span>
+            )}
           </button>
+        </div>
+
+        <div className="w-full flex items-center gap-3 mt-6">
+          <span className="text-[10px] font-bold text-white/40 tracking-[0.5em] uppercase">Volume</span>
+          <input 
+            type="range" 
+            min="0" 
+            max="1" 
+            step="0.01" 
+            value={volume} 
+            onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
+            className="flex-1 h-1 rounded-full bg-white/20 accent-white cursor-pointer"
+          />
         </div>
       </div>
     </div>
