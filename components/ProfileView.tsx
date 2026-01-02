@@ -2,16 +2,37 @@
 import React, { useState } from 'react';
 import { ShieldCheck, Mail, LogOut, Plus, Edit2, Check, X, Loader2, UserCircle, Music4, Sparkles } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { Song } from '../types';
+import SongCard from './SongCard';
 
 interface ProfileViewProps {
   user: any;
-  likedCount?: number;
+  userSongs: Song[];
+  availableSongs: Song[];
+  currentSongId?: string;
+  onPlay: (song: Song) => void;
+  onToggleLike: (id: string) => void;
   onUploadClick: () => void;
   onLogout: () => void;
   onLoginClick: () => void;
+  onShowDetail: (song: Song) => void;
+  onEdit?: (song: Song) => void;
+  onDelete?: (id: string) => void;
 }
 
-const ProfileView: React.FC<ProfileViewProps> = ({ user, likedCount = 0, onUploadClick, onLogout, onLoginClick }) => {
+const ProfileView: React.FC<ProfileViewProps> = ({
+  user,
+  userSongs,
+  currentSongId,
+  onPlay,
+  onToggleLike,
+  onUploadClick,
+  onLogout,
+  onLoginClick,
+  onShowDetail,
+  onEdit,
+  onDelete
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [tempName, setTempName] = useState('');
@@ -95,12 +116,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, likedCount = 0, onUploa
     }
   };
 
-  const stats = [
-    { label: 'Total Plays', value: '0', color: 'text-blue-500' },
-    { label: 'Liked Songs', value: likedCount.toString(), color: 'text-red-500' },
-    { label: 'Followers', value: '0', color: 'text-green-500' },
-  ];
-
   return (
     <div className="max-w-4xl mx-auto py-4 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
       {/* Profile Header */}
@@ -172,16 +187,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, likedCount = 0, onUploa
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-3 gap-4 mb-8 px-2 mt-4">
-        {stats.map((stat, i) => (
-          <div key={i} className="bg-[#0a0a0a] border border-[#1a1a1a] p-4 md:p-8 rounded-3xl text-center hover:border-green-500/20 transition-all hover:bg-[#0d0d0d] group">
-            <p className={`text-2xl md:text-4xl font-black mb-1 transition-transform group-hover:scale-110 ${stat.color}`}>{stat.value}</p>
-            <p className="text-gray-500 text-[10px] md:text-xs font-black uppercase tracking-widest">{stat.label}</p>
-          </div>
-        ))}
-      </div>
-
       {/* Actions */}
       <div className="px-2 space-y-4">
         <button 
@@ -202,6 +207,48 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, likedCount = 0, onUploa
           Sign Out of Rampfor
         </button>
       </div>
+      
+      <section className="mt-10 px-2 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.4em] text-gray-500 mb-1">My Music</p>
+            <h2 className="text-2xl font-black text-white tracking-tight">{userSongs.length} {userSongs.length === 1 ? 'track' : 'tracks'}</h2>
+          </div>
+        </div>
+        {userSongs.length === 0 ? (
+          <>
+            <p className="text-gray-400 text-sm italic">Kamu belum mengunggah musik apa pun. Berikut koleksi yang tersedia sekarang.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+              {availableSongs.map(song => (
+                <SongCard
+                  key={song.id}
+                  song={song}
+                  isActive={currentSongId === song.id}
+                  onPlay={onPlay}
+                  onToggleLike={onToggleLike}
+                  onShowDetail={onShowDetail}
+                />
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {userSongs.map(song => (
+              <SongCard 
+                key={song.id}
+                song={song}
+                isActive={currentSongId === song.id}
+                isOwner
+                onPlay={onPlay}
+                onToggleLike={onToggleLike}
+                onShowDetail={onShowDetail}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 };

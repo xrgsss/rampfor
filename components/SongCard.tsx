@@ -11,6 +11,7 @@ interface SongCardProps {
   onToggleLike?: (id: string) => void;
   onEdit?: (song: Song) => void;
   onDelete?: (id: string) => void;
+  onShowDetail?: (song: Song) => void;
 }
 
 const DefaultVinyl = () => (
@@ -24,7 +25,7 @@ const DefaultVinyl = () => (
   </div>
 );
 
-const SongCard: React.FC<SongCardProps> = ({ song, isActive, isOwner, onPlay, onToggleLike, onEdit, onDelete }) => {
+const SongCard: React.FC<SongCardProps> = ({ song, isActive, isOwner, onPlay, onToggleLike, onEdit, onDelete, onShowDetail }) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const isDefaultVinyl = song.coverUrl === 'default-vinyl';
@@ -41,7 +42,7 @@ const SongCard: React.FC<SongCardProps> = ({ song, isActive, isOwner, onPlay, on
 
   return (
     <div 
-      className={`group relative bg-[#121212] border ${isActive ? 'border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.1)]' : 'border-[#1a1a1a]'} rounded-xl md:rounded-2xl p-3 md:p-4 transition-all duration-300 hover:bg-[#1a1a1a] overflow-hidden`}
+    className={`group relative bg-[#121212] border ${isActive ? 'border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.1)]' : 'border-[#1a1a1a]'} rounded-xl md:rounded-2xl p-2 md:p-4 transition-all duration-300 hover:bg-[#1a1a1a] overflow-hidden w-full mx-auto max-w-[240px] sm:max-w-[260px] md:max-w-none`}
     >
       <div className="relative aspect-square mb-3 md:mb-4 flex items-center justify-center overflow-hidden rounded-lg md:rounded-xl bg-black">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_40%,_black_100%)] opacity-40 z-10"></div>
@@ -110,10 +111,15 @@ const SongCard: React.FC<SongCardProps> = ({ song, isActive, isOwner, onPlay, on
         </div>
       </div>
 
-      <div className="space-y-0.5">
-        <h3 className="font-bold text-sm md:text-lg truncate text-white group-hover:text-green-500 transition-colors">{song.title}</h3>
-        <p className="text-gray-500 text-[10px] md:text-sm">{song.artist}</p>
-      </div>
+        <div className="space-y-0.5">
+          <h3 
+            onClick={() => onShowDetail?.(song)}
+            className="font-bold text-sm md:text-lg truncate text-white group-hover:text-green-500 transition-colors cursor-pointer"
+          >
+            {song.title}
+          </h3>
+          <p className="text-gray-500 text-[10px] md:text-sm">{song.artist}</p>
+        </div>
 
       <div className="mt-3 md:mt-4 flex items-center gap-2">
         <button 

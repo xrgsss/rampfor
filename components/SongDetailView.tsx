@@ -154,12 +154,6 @@ const SongDetailView: React.FC<SongDetailViewProps> = ({
           >
             <Heart size={18} fill={song.isLiked ? 'currentColor' : 'none'} strokeWidth={2.5} />
           </button>
-          <button 
-            onClick={() => onShare(song)}
-            className="transition-all active:scale-75 p-2 text-gray-400 hover:text-white"
-          >
-            <Share size={18} strokeWidth={1.5} />
-          </button>
 
           <div className="flex items-center gap-6">
             <button onClick={onPrev} className="text-white/30 hover:text-white transition-all active:scale-90 p-2">
@@ -210,6 +204,12 @@ const SongDetailView: React.FC<SongDetailViewProps> = ({
             onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
             className="flex-1 h-1 rounded-full bg-white/20 accent-white cursor-pointer"
           />
+          <button
+            onClick={() => onShare(song)}
+            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all"
+          >
+            <Share size={18} strokeWidth={1.5} />
+          </button>
         </div>
       </div>
     </div>

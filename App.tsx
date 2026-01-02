@@ -41,6 +41,10 @@ const App: React.FC = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('none');
   const [isShuffle, setIsShuffle] = useState(false);
+  const userSongs = useMemo(() => {
+    if (!session?.user?.id) return [];
+    return songs.filter(song => song.userId === session.user.id);
+  }, [songs, session?.user?.id]);
   
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -437,8 +441,12 @@ const App: React.FC = () => {
     }
   };
 
-  const openSongDetail = () => {
-    if (!currentSong) return;
+  const openSongDetail = (song?: Song) => {
+    const target = song ?? currentSong;
+    if (!target) return;
+    if (song && target.id !== currentSong?.id) {
+      setCurrentSong(target);
+    }
     if (currentView !== 'song-detail') {
       setPrevView(currentView);
     }
@@ -453,6 +461,12 @@ const App: React.FC = () => {
     await supabase.auth.signOut();
     setCurrentView('home');
   };
+
+  useEffect(() => {
+    if (currentView === 'song-detail' && !currentSong) {
+      setCurrentView('home');
+    }
+  }, [currentView, currentSong]);
 
   const filteredSongs = songs.filter(s => 
     s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -473,6 +487,7 @@ const App: React.FC = () => {
             onToggleLike={toggleLike}
             onToggleShuffle={toggleShuffle}
             isShuffle={isShuffle}
+            onShowDetail={openSongDetail}
           />
         );
       case 'search':
@@ -490,6 +505,7 @@ const App: React.FC = () => {
             userId={session?.user?.id}
             onEdit={openEditModal}
             onDelete={handleDeleteSong}
+            onShowDetail={openSongDetail}
           />
         );
       case 'library':
@@ -505,17 +521,25 @@ const App: React.FC = () => {
             onEdit={openEditModal}
             onDelete={handleDeleteSong}
             playlists={playlists}
+            onShowDetail={openSongDetail}
           />
         );
       case 'profile':
-        return (
-          <ProfileView 
-            user={session?.user} 
-            likedCount={songs.filter(s => s.isLiked).length}
-            onUploadClick={() => session ? setIsUploadModalOpen(true) : setIsAuthOpen(true)} 
-            onLogout={handleLogout}
-            onLoginClick={() => setIsAuthOpen(true)}
-          />
+      return (
+        <ProfileView 
+          user={session?.user} 
+          userSongs={userSongs}
+          availableSongs={songs}
+          currentSongId={currentSong?.id}
+          onPlay={handlePlay}
+          onToggleLike={toggleLike}
+          onShowDetail={openSongDetail}
+          onEdit={openEditModal}
+          onDelete={handleDeleteSong}
+          onUploadClick={() => session ? setIsUploadModalOpen(true) : setIsAuthOpen(true)} 
+          onLogout={handleLogout}
+          onLoginClick={() => setIsAuthOpen(true)}
+        />
         );
       default:
         return null;

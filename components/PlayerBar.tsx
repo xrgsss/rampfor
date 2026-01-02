@@ -27,7 +27,7 @@ interface PlayerBarProps {
   volume: number;
   onVolumeChange: (value: number) => void;
   onToggleLike: (id: string) => void;
-  onOpenDetail?: () => void;
+  onOpenDetail?: (song: Song) => void;
   repeatMode: RepeatMode;
   isShuffle: boolean;
   onToggleShuffle: () => void;
@@ -51,7 +51,8 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   repeatMode,
   isShuffle,
   onToggleShuffle,
-  onToggleRepeat
+  onToggleRepeat,
+  onShare
 }) => {
 
   const isLiked = currentSong?.isLiked || false;
@@ -97,7 +98,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
         
         {/* Left: Playback & Info */}
         <div 
-          onClick={onOpenDetail}
+          onClick={() => currentSong && onOpenDetail?.(currentSong)}
           className="flex items-center gap-3.5 flex-1 min-w-0 cursor-pointer group/info"
         >
           {/* Mobile Play Button with Rotating Cover - Icon stays Static */}

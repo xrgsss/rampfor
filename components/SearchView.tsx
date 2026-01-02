@@ -17,16 +17,8 @@ interface SearchViewProps {
   userId?: string;
   onEdit?: (song: Song) => void;
   onDelete?: (id: string) => void;
+  onShowDetail: (song: Song) => void;
 }
-
-const CATEGORIES = [
-  { name: 'Pop', color: 'bg-pink-600' },
-  { name: 'Hip-Hop', color: 'bg-orange-600' },
-  { name: 'Rock', color: 'bg-red-700' },
-  { name: 'Dance', color: 'bg-blue-600' },
-  { name: 'Chill', color: 'bg-purple-600' },
-  { name: 'Indie', color: 'bg-green-700' },
-];
 
 const SearchView: React.FC<SearchViewProps> = ({
   searchQuery,
@@ -39,7 +31,8 @@ const SearchView: React.FC<SearchViewProps> = ({
   currentSongId,
   userId,
   onEdit,
-  onDelete
+  onDelete,
+  onShowDetail
 }) => {
   return (
     <div className="flex flex-col gap-6 md:gap-8 animate-in fade-in duration-500">
@@ -74,16 +67,17 @@ const SearchView: React.FC<SearchViewProps> = ({
             <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">Search Results</h2>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
               {filteredSongs.map(song => (
-                <SongCard
-                  key={song.id}
-                  song={song}
-                  isActive={currentSongId === song.id}
-                  isOwner={userId === song.userId}
-                  onPlay={onPlay}
-                  onToggleLike={onToggleLike}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                />
+              <SongCard
+                key={song.id}
+                song={song}
+                isActive={currentSongId === song.id}
+                isOwner={userId === song.userId}
+                onPlay={onPlay}
+                onToggleLike={onToggleLike}
+                onShowDetail={onShowDetail}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
               ))}
             </div>
             {filteredSongs.length === 0 && (
@@ -93,24 +87,7 @@ const SearchView: React.FC<SearchViewProps> = ({
             )}
           </div>
         </div>
-      ) : (
-        <div className="animate-in fade-in duration-700">
-          <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">Browse all</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6">
-            {CATEGORIES.map((cat, i) => (
-              <button
-                key={i}
-                className={`${cat.color} aspect-[1.5/1] md:aspect-square rounded-xl md:rounded-2xl p-3 md:p-5 text-left relative overflow-hidden group hover:scale-[1.02] transition-transform shadow-lg`}
-              >
-                <span className="text-lg md:text-2xl font-bold text-white relative z-10">{cat.name}</span>
-                <div className="absolute top-1 right-1 opacity-20">
-                   <SearchIcon size={64} className="rotate-12" />
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      ) : null}
     </div>
   );
 };

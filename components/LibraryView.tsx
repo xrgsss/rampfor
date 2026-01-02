@@ -15,6 +15,7 @@ interface LibraryViewProps {
   onEdit?: (song: Song) => void;
   onDelete?: (id: string) => void;
   playlists: Playlist[];
+  onShowDetail: (song: Song) => void;
 }
 
 const LibraryView: React.FC<LibraryViewProps> = ({ 
@@ -27,7 +28,8 @@ const LibraryView: React.FC<LibraryViewProps> = ({
   userId,
   onEdit,
   onDelete,
-  playlists
+  playlists,
+  onShowDetail
 }) => {
   return (
     <div className="flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -56,6 +58,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({
                 isOwner={userId === song.userId}
                 onPlay={onPlay} 
                 onToggleLike={onToggleLike}
+                onShowDetail={onShowDetail}
                 onEdit={onEdit}
                 onDelete={onDelete}
               />

@@ -14,9 +14,10 @@ interface HomeViewProps {
   onToggleLike: (id: string) => void;
   onToggleShuffle: () => void;
   isShuffle: boolean;
+  onShowDetail: (song: Song) => void;
 }
 
-const HomeView: React.FC<HomeViewProps> = ({ songs, onPlay, currentSongId, userId, onEdit, onDelete, onToggleLike, onToggleShuffle, isShuffle }) => {
+const HomeView: React.FC<HomeViewProps> = ({ songs, onPlay, currentSongId, userId, onEdit, onDelete, onToggleLike, onToggleShuffle, isShuffle, onShowDetail }) => {
   if (songs.length === 0) {
     return (
       <div className="flex flex-col gap-6 md:gap-10 pb-20 animate-in fade-in duration-700">
@@ -157,19 +158,20 @@ const HomeView: React.FC<HomeViewProps> = ({ songs, onPlay, currentSongId, userI
         </div>
       </div>
 
-        <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8 mt-4">
-        {songs.map(song => (
-          <SongCard 
-            key={song.id} 
-            song={song} 
-            isActive={currentSongId === song.id}
-            isOwner={userId === song.userId}
-            onPlay={onPlay}
-            onToggleLike={onToggleLike}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
-        ))}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 mt-4">
+          {songs.map(song => (
+            <SongCard 
+              key={song.id} 
+              song={song} 
+              isActive={currentSongId === song.id}
+              isOwner={userId === song.userId}
+              onPlay={onPlay}
+              onToggleLike={onToggleLike}
+              onShowDetail={onShowDetail}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          ))}
       </div>
     </div>
   );
