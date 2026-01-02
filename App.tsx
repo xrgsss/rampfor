@@ -65,6 +65,11 @@ const App: React.FC = () => {
     onConfirm: () => {}
   });
 
+  const normalizeCoverUrl = (value?: string | null) => {
+    if (value === DEFAULT_COVER_ID) return '';
+    return value ?? '';
+  };
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recentlyPlayedSongs = useMemo(() => {
     const songMap = new Map(songs.map(song => [song.id, song]));
@@ -100,7 +105,7 @@ const App: React.FC = () => {
           id: item.id.toString(),
           title: item.title,
           artist: item.artist,
-          coverUrl: item.cover_url || DEFAULT_COVER_ID,
+          coverUrl: normalizeCoverUrl(item.cover_url),
           audioUrl: item.audio_url,
           plays: item.plays || 0,
           duration: item.duration || 180,
@@ -190,7 +195,7 @@ const App: React.FC = () => {
           id: item.id,
           name: item.name,
           description: item.description,
-          coverUrl: item.cover_url || DEFAULT_COVER_ID,
+          coverUrl: normalizeCoverUrl(item.cover_url),
           userId,
           createdAt: item.created_at,
           updatedAt: item.updated_at,
@@ -360,20 +365,20 @@ const App: React.FC = () => {
       setPlaylistSongs([]);
       return;
     }
-    const formatted = (data ?? [])
-      .map((entry: any) => ({ ...entry.songs }))
-      .filter((song: any): song is any => Boolean(song))
-      .map((song: any) => ({
-        id: song.id.toString(),
-        title: song.title,
-        artist: song.artist,
-        coverUrl: song.cover_url || DEFAULT_COVER_ID,
-        audioUrl: song.audio_url,
-        plays: song.plays || 0,
-        duration: song.duration || 180,
-        isLiked: likedSongIds.includes(song.id.toString()),
-        userId: song.user_id
-      }));
+        const formatted = (data ?? [])
+          .map((entry: any) => ({ ...entry.songs }))
+          .filter((song: any): song is any => Boolean(song))
+          .map((song: any) => ({
+            id: song.id.toString(),
+            title: song.title,
+            artist: song.artist,
+            coverUrl: normalizeCoverUrl(song.cover_url),
+            audioUrl: song.audio_url,
+            plays: song.plays || 0,
+            duration: song.duration || 180,
+            isLiked: likedSongIds.includes(song.id.toString()),
+            userId: song.user_id
+          }));
     setPlaylistSongs(formatted);
   }, [likedSongIds]);
 
@@ -646,8 +651,7 @@ const App: React.FC = () => {
         .insert({
           user_id: session.user.id,
           name: 'My Playlist',
-          description: 'Playlist otomatis',
-          cover_url: DEFAULT_COVER_ID
+          description: 'Playlist otomatis'
         })
         .select('*')
         .single();
@@ -662,7 +666,7 @@ const App: React.FC = () => {
         id: created.id,
         name: created.name,
         description: created.description,
-          coverUrl: created.cover_url || DEFAULT_COVER_ID,
+        coverUrl: normalizeCoverUrl(created.cover_url),
         userId: session.user.id,
         createdAt: created.created_at,
         updatedAt: created.updated_at,

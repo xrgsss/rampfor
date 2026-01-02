@@ -12,6 +12,7 @@ import {
   Share
 } from 'lucide-react';
 import { Song, RepeatMode } from '../types';
+import { DEFAULT_COVER_IMAGE } from '../constants';
 
 interface SongDetailViewProps {
   song: Song;
@@ -105,7 +106,7 @@ const SongDetailView: React.FC<SongDetailViewProps> = ({
             
             {/* Album Label */}
             <div className="relative z-10 w-[38%] h-[38%] rounded-full overflow-hidden border-[2px] border-black shadow-inner">
-               <img src={song.coverUrl} alt="" className="w-full h-full object-cover" />
+               <img src={song.coverUrl || DEFAULT_COVER_IMAGE} alt="" className="w-full h-full object-cover" />
             </div>
             
             {/* Center Hole */}

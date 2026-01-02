@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Heart, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import { Song } from '../types';
-import { DEFAULT_COVER_ID, DEFAULT_COVER_IMAGE } from '../constants';
+import { DEFAULT_COVER_IMAGE } from '../constants';
 
 interface SongCardProps {
   song: Song;
@@ -24,7 +24,8 @@ const DefaultVinyl = () => (
 const SongCard: React.FC<SongCardProps> = ({ song, isActive, isOwner, onPlay, onToggleLike, onEdit, onDelete, onShowDetail }) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const isDefaultVinyl = song.coverUrl === DEFAULT_COVER_ID;
+  const hasCover = Boolean(song.coverUrl);
+  const coverSrc = song.coverUrl || DEFAULT_COVER_IMAGE;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -43,17 +44,17 @@ const SongCard: React.FC<SongCardProps> = ({ song, isActive, isOwner, onPlay, on
       <div className="relative aspect-square mb-3 md:mb-4 flex items-center justify-center overflow-hidden rounded-lg md:rounded-xl bg-black">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_40%,_black_100%)] opacity-40 z-10"></div>
         <div className="relative z-20 w-full h-full p-2 group-hover:rotate-12 transition-transform duration-700 ease-in-out">
-            {isDefaultVinyl ? (
-              <DefaultVinyl />
-            ) : (
+            {hasCover ? (
               <div className="relative w-full h-full rounded-full overflow-hidden border-2 md:border-4 border-[#1a1a1a] shadow-2xl">
                 <img 
-                  src={song.coverUrl} 
+                  src={coverSrc} 
                   alt={song.title} 
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 md:w-8 md:h-8 bg-black rounded-full border border-[#222]"></div>
               </div>
+            ) : (
+              <DefaultVinyl />
             )}
         </div>
 

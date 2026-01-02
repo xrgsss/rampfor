@@ -14,6 +14,7 @@ import {
   MonitorSpeaker
 } from 'lucide-react';
 import { Song, RepeatMode } from '../types';
+import { DEFAULT_COVER_IMAGE } from '../constants';
 
 interface PlayerBarProps {
   currentSong: Song | null;
@@ -108,7 +109,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
             <div className="absolute inset-0 rounded-full bg-black shadow-lg"></div>
             <div className={`absolute inset-0.5 rounded-full overflow-hidden border border-white/10 ${isPlaying ? 'animate-slow-spin' : 'animation-paused'}`}>
               <img 
-                src={currentSong?.coverUrl || 'https://picsum.photos/seed/music/100/100'} 
+                src={currentSong?.coverUrl || DEFAULT_COVER_IMAGE} 
                 alt="Cover" 
                 className="w-full h-full object-cover"
               />
@@ -125,7 +126,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           {/* Desktop Album Art (Small) */}
           <div className="hidden md:block w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 border border-white/10 group-hover/info:scale-105 transition-transform">
             <img 
-              src={currentSong?.coverUrl || 'https://picsum.photos/seed/music/100/100'} 
+              src={currentSong?.coverUrl || DEFAULT_COVER_IMAGE} 
               alt="Cover" 
               className="w-full h-full object-cover"
             />

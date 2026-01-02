@@ -3,7 +3,7 @@ import React from 'react';
 import { Heart, Clock, ListMusic, Plus, Play } from 'lucide-react';
 import { Song, Playlist } from '../types';
 import SongCard from './SongCard';
-import { DEFAULT_COVER_ID, DEFAULT_COVER_IMAGE } from '../constants';
+import { DEFAULT_COVER_IMAGE } from '../constants';
 
 interface LibraryViewProps {
   likedSongs: Song[];
@@ -111,7 +111,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({
                 onClick={() => onPlay(song)}
               >
                 <div className="relative aspect-square rounded-xl overflow-hidden mb-2">
-                  <img src={song.coverUrl === DEFAULT_COVER_ID ? DEFAULT_COVER_IMAGE : song.coverUrl} alt={song.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <img src={song.coverUrl || DEFAULT_COVER_IMAGE} alt={song.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                   <div className={`absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${currentSongId === song.id ? 'opacity-100' : ''}`}>
                     <div className="p-3 bg-green-500 rounded-full text-black shadow-lg shadow-green-500/20">
                       <Play size={20} fill="currentColor" />

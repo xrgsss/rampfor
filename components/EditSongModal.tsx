@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Save, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Song } from '../types';
-import { DEFAULT_COVER_ID } from '../constants';
 import { supabase } from '../services/supabase';
 
 interface EditSongModalProps {
@@ -16,14 +15,14 @@ const EditSongModal: React.FC<EditSongModalProps> = ({ song, isOpen, onClose, on
   const [title, setTitle] = useState(song.title);
   const [artist, setArtist] = useState(song.artist);
   const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [coverPreview, setCoverPreview] = useState<string>(song.coverUrl === DEFAULT_COVER_ID ? '' : song.coverUrl);
+  const [coverPreview, setCoverPreview] = useState<string>(song.coverUrl || '');
   const [isSaving, setIsSaving] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setTitle(song.title);
     setArtist(song.artist);
-    setCoverPreview(song.coverUrl === DEFAULT_COVER_ID ? '' : song.coverUrl);
+    setCoverPreview(song.coverUrl || '');
   }, [song]);
 
   if (!isOpen) return null;

@@ -76,7 +76,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, us
 
       const audioUrl = supabase.storage.from('music').getPublicUrl(audioFileName).data.publicUrl;
 
-      let coverUrl = DEFAULT_COVER_ID;
+      let coverUrl: string | undefined;
       if (coverFile) {
         const coverFileName = `${Date.now()}_${coverFile.name}`;
         const { error: coverError } = await supabase.storage
@@ -86,24 +86,25 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, us
         coverUrl = supabase.storage.from('covers').getPublicUrl(coverFileName).data.publicUrl;
       }
 
-      const { data: songData, error: dbError } = await supabase.from('songs').insert([
-        { 
-          title, 
-          artist, 
-          audio_url: audioUrl, 
-          cover_url: coverUrl,
-          plays: 0
-        }
-      ]).select();
+      const payload: any = {
+        title,
+        artist,
+        audio_url: audioUrl,
+        plays: 0
+      };
+      if (coverUrl) payload.cover_url = coverUrl;
+
+      const { data: songData, error: dbError } = await supabase.from('songs').insert([payload]).select();
 
       if (dbError) throw dbError;
 
       if (songData && songData[0]) {
+        const normalizedCover = songData[0].cover_url === DEFAULT_COVER_ID ? '' : songData[0].cover_url ?? '';
         onUpload({
           id: songData[0].id.toString(),
           title: songData[0].title,
           artist: songData[0].artist,
-          coverUrl: songData[0].cover_url,
+          coverUrl: normalizedCover,
           audioUrl: songData[0].audio_url,
           plays: 0,
           duration: 180,
