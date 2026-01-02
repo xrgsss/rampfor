@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { X, Upload, Music, User, Image as ImageIcon, FileAudio, CheckCircle2 } from 'lucide-react';
+import { X, Upload, Music, User, Image as ImageIcon, FileAudio } from 'lucide-react';
 import { Song } from '../types';
 import { supabase } from '../services/supabase';
 
@@ -8,9 +8,21 @@ interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpload: (song: Song) => void;
+  userId?: string | null;
 }
 
-const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) => {
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const ensureSession = async () => {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) return session;
+    await wait(250);
+  }
+  throw new Error('Silakan login ulang sebelum mengunggah.');
+};
+
+const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload, userId }) => {
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -45,25 +57,24 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
     e.preventDefault();
     if (!title || !artist || !audioFile) return;
 
+    console.log('handleSubmit started', { title, artist, audioFileName: audioFile?.name, coverFileName: coverFile?.name, userId });
     setIsUploading(true);
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
-      
-      if (!userId) {
+      const session = await ensureSession();
+      const currentUserId = session.user.id;
+      const ownerId = userId || currentUserId;
+      if (!ownerId) {
         throw new Error("Sesi berakhir. Silakan login kembali untuk mengunggah.");
       }
 
-      // 1. Upload Audio
       const audioFileName = `${Date.now()}_${audioFile.name}`;
-      const { data: audioData, error: audioError } = await supabase.storage
+      const { error: audioError } = await supabase.storage
         .from('music')
         .upload(audioFileName, audioFile);
       if (audioError) throw audioError;
 
       const audioUrl = supabase.storage.from('music').getPublicUrl(audioFileName).data.publicUrl;
 
-      // 2. Upload Cover (Optional)
       let coverUrl = 'default-vinyl';
       if (coverFile) {
         const coverFileName = `${Date.now()}_${coverFile.name}`;
@@ -74,14 +85,12 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
         coverUrl = supabase.storage.from('covers').getPublicUrl(coverFileName).data.publicUrl;
       }
 
-      // 3. Save to Database
       const { data: songData, error: dbError } = await supabase.from('songs').insert([
         { 
           title, 
           artist, 
           audio_url: audioUrl, 
           cover_url: coverUrl,
-          user_id: userId,
           plays: 0
         }
       ]).select();
@@ -96,7 +105,8 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
           coverUrl: songData[0].cover_url,
           audioUrl: songData[0].audio_url,
           plays: 0,
-          duration: 180
+          duration: 180,
+          userId: songData[0].user_id ?? ownerId
         });
       }
 

@@ -9,7 +9,7 @@ create table if not exists songs (
   audio_url text not null,
   plays integer not null default 0,
   duration integer not null default 180,
-  user_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade default auth.uid(),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -36,14 +36,47 @@ alter table songs enable row level security;
 create policy songs_public_read on songs
   for select using (true);
 
+drop policy if exists songs_insert_by_owner on songs;
 create policy songs_insert_by_owner on songs
-  for insert with check (auth.uid() = user_id);
+  for insert with check (auth.uid() IS NOT NULL);
 
+drop policy if exists songs_update_by_owner on songs;
 create policy songs_update_by_owner on songs
   for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+drop policy if exists songs_delete_by_owner on songs;
 create policy songs_delete_by_owner on songs
   for delete using (auth.uid() = user_id);
 
-select storage.create_bucket('music', true);
-select storage.create_bucket('covers', true);
+create or replace function songs_set_owner()
+  returns trigger
+  language plpgsql
+  security definer
+  as $$
+begin
+  if new.user_id is null then
+    new.user_id := auth.uid();
+  end if;
+  return new;
+end;
+$$;
+
+create trigger songs_set_owner_trigger
+  before insert on songs
+  for each row execute function songs_set_owner();
+
+do $$
+begin
+  if not exists (select 1 from storage.buckets where name = 'music') then
+    perform storage.create_bucket('music', true);
+  end if;
+end;
+$$;
+
+do $$
+begin
+  if not exists (select 1 from storage.buckets where name = 'covers') then
+    perform storage.create_bucket('covers', true);
+  end if;
+end;
+$$;

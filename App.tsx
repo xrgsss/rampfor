@@ -317,7 +317,7 @@ const App: React.FC = () => {
       </main>
       <BottomNav currentView={currentView} onNavigate={setCurrentView} />
       
-      {isUploadModalOpen && <UploadModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} onUpload={handleUploadSong} />}
+      {isUploadModalOpen && <UploadModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} onUpload={handleUploadSong} userId={session?.user?.id} />}
       
       {isEditModalOpen && editingSong && (
         <EditSongModal 
