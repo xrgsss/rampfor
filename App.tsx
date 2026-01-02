@@ -84,7 +84,7 @@ const App: React.FC = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase]);
 
   // Fetch Real Songs from Supabase
   useEffect(() => {
@@ -110,7 +110,7 @@ const App: React.FC = () => {
       }
     };
     fetchSongs();
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
     if (audioRef.current && currentSong) {
@@ -232,7 +232,7 @@ const App: React.FC = () => {
 
   const toggleShuffle = useCallback(() => {
     setIsShuffle(prev => !prev);
-  }, []);
+  }, [supabase]);
 
   const shareSong = useCallback((song: Song) => {
     if (typeof window === 'undefined') return;
@@ -326,6 +326,18 @@ const App: React.FC = () => {
     });
   }, [session]);
 
+  const incrementPlayCount = useCallback(async (song: Song) => {
+    const nextPlays = song.plays + 1;
+    setSongs(prev => prev.map(s => s.id === song.id ? { ...s, plays: nextPlays } : s));
+    setCurrentSong(prev => (prev && prev.id === song.id ? { ...prev, plays: nextPlays } : prev));
+
+    const { error } = await supabase
+      .from('songs')
+      .update({ plays: nextPlays })
+      .eq('id', song.id);
+    if (error) console.error('Gagal memperbarui jumlah play:', error);
+  }, [supabase]);
+
   const fetchPlaylistSongs = useCallback(async (playlistId: string) => {
     if (!playlistId || !session?.user?.id) {
       setPlaylistSongs([]);
@@ -366,12 +378,19 @@ const App: React.FC = () => {
 
   const handlePlay = (song: Song) => {
     if (currentSong?.id === song.id) {
-      setIsPlaying(!isPlaying);
-    } else {
-      setCurrentSong(song);
+      if (isPlaying) {
+        setIsPlaying(false);
+        return;
+      }
       setIsPlaying(true);
-      void recordRecentlyPlayed(song.id);
+      void incrementPlayCount(song);
+      return;
     }
+
+    setCurrentSong(song);
+    setIsPlaying(true);
+    void recordRecentlyPlayed(song.id);
+    void incrementPlayCount(song);
   };
 
   const toggleRepeatMode = () => {
