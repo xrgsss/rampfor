@@ -516,10 +516,16 @@ const App: React.FC = () => {
     setCurrentView(prevView);
   };
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     await supabase.auth.signOut();
     setCurrentView('home');
-  };
+  }, []);
+
+  const confirmLogout = useCallback(() => {
+    if (window.confirm('Kamu yakin ingin keluar?')) {
+      void handleLogout();
+    }
+  }, [handleLogout]);
 
   useEffect(() => {
     if (currentView === 'song-detail' && !currentSong) {
@@ -741,7 +747,7 @@ const App: React.FC = () => {
           onEdit={openEditModal}
           onDelete={handleDeleteSong}
           onUploadClick={() => session ? setIsUploadModalOpen(true) : setIsAuthOpen(true)} 
-          onLogout={handleLogout}
+          onLogout={confirmLogout}
           onLoginClick={() => setIsAuthOpen(true)}
         />
         );
@@ -756,7 +762,7 @@ const App: React.FC = () => {
         currentView={currentView as any} 
         onNavigate={setCurrentView as any} 
         onUploadClick={() => session ? setIsUploadModalOpen(true) : setIsAuthOpen(true)} 
-        onLogout={handleLogout}
+        onLogout={confirmLogout}
         user={session?.user}
       />
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
