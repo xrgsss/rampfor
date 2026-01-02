@@ -12,6 +12,7 @@ import UploadModal from './components/UploadModal';
 import EditSongModal from './components/EditSongModal';
 import SongDetailView from './components/SongDetailView';
 import PlaylistDetailView from './components/PlaylistDetailView';
+import ConfirmDialog from './components/ConfirmDialog';
 import AuthView from './components/AuthView';
 import { Song, ViewType, Playlist, RepeatMode } from './types';
 import { searchAIsongs } from './services/geminiService';
@@ -54,6 +55,14 @@ const App: React.FC = () => {
   
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    title: '',
+    description: '',
+    confirmLabel: 'Ya',
+    cancelLabel: 'Batal',
+    onConfirm: () => {}
+  });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recentlyPlayedSongs = useMemo(() => {
@@ -516,16 +525,46 @@ const App: React.FC = () => {
     setCurrentView(prevView);
   };
 
+  const closeConfirmDialog = useCallback(() => {
+    setConfirmDialog(prev => ({ ...prev, open: false }));
+  }, []);
+
+  const openConfirmDialog = useCallback((config: {
+    title: string;
+    description: string;
+    onConfirm: () => void;
+    confirmLabel?: string;
+    cancelLabel?: string;
+  }) => {
+    setConfirmDialog({
+      open: true,
+      title: config.title,
+      description: config.description,
+      confirmLabel: config.confirmLabel ?? 'Ya',
+      cancelLabel: config.cancelLabel ?? 'Batal',
+      onConfirm: () => {
+        config.onConfirm();
+        closeConfirmDialog();
+      }
+    });
+  }, [closeConfirmDialog]);
+
   const handleLogout = useCallback(async () => {
     await supabase.auth.signOut();
     setCurrentView('home');
   }, []);
 
   const confirmLogout = useCallback(() => {
-    if (window.confirm('Kamu yakin ingin keluar?')) {
-      void handleLogout();
-    }
-  }, [handleLogout]);
+    openConfirmDialog({
+      title: 'Keluar dari Rampfor?',
+      description: 'Kamu akan keluar dari akunmu dan perlu login ulang untuk melanjutkan.',
+      confirmLabel: 'Keluar',
+      cancelLabel: 'Batal',
+      onConfirm: () => {
+        void handleLogout();
+      }
+    });
+  }, [handleLogout, openConfirmDialog]);
 
   useEffect(() => {
     if (currentView === 'song-detail' && !currentSong) {
@@ -840,6 +879,15 @@ const App: React.FC = () => {
         />
       )}
       <audio ref={audioRef} src={currentSong?.audioUrl} onTimeUpdate={onTimeUpdate} onLoadedMetadata={onTimeUpdate} onEnded={handleNext} />
+      <ConfirmDialog
+        open={confirmDialog.open}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        confirmLabel={confirmDialog.confirmLabel}
+        cancelLabel={confirmDialog.cancelLabel}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={closeConfirmDialog}
+      />
     </div>
   );
 };
