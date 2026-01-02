@@ -23,6 +23,7 @@ interface ProfileViewProps {
 const ProfileView: React.FC<ProfileViewProps> = ({
   user,
   userSongs,
+  availableSongs,
   currentSongId,
   onPlay,
   onToggleLike,
